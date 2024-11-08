@@ -1,26 +1,18 @@
 // 用于将存储的过滤器规则转换为 declarativeNetRequest 规则
-function convertFilterToRule(filter, id) {
-  // 对于前缀匹配，我们需要构造一个替换规则
-  // 例如：
-  // pattern: https://testtaskonbackend.taskon.xyz
-  // destination: http://127.0.0.1:8080
-  // 当URL为 https://testtaskonbackend.taskon.xyz/boost/v1/submitBoostQuest
-  // 应该替换为 http://127.0.0.1:8080/boost/v1/submitBoostQuest
+function convertFilterToRule(filter, index) {
+  // 使用一个足够大的基数来确保 ID 唯一，同时保持为整数
+  const uniqueId = (index + 1) * 100000 + Math.floor(Math.random() * 99999);
+  
   return {
-    id: id,
+    id: uniqueId,
     priority: 1,
     action: {
       type: "redirect",
       redirect: {
-        // 使用 regexSubstitution 来实现部分替换
-        // $1 会被替换为正则表达式第一个捕获组匹配的内容
         regexSubstitution: filter.destination + "\\1"
       }
     },
     condition: {
-      // 将前缀匹配转换为正则表达式
-      // 例如 "https://testtaskonbackend.taskon.xyz" 
-      // 转换为 "^https://testtaskonbackend\.taskon\.xyz(.*)"
       regexFilter: "^" + escapeRegExp(filter.pattern) + "(.*)",
       resourceTypes: ["xmlhttprequest", "main_frame", "sub_frame", "script", "stylesheet", "image"]
     }
@@ -39,30 +31,47 @@ async function updateDynamicRules() {
     const enabled = data.redirectEnabled || false;
     const filters = data.filters || [];
     
-    // 如果总开关关闭，清除所有规则
+    // 如果总开关关闭，清除所有规则和命中计数
     if (!enabled) {
+      const currentRules = await chrome.declarativeNetRequest.getDynamicRules();
       await chrome.declarativeNetRequest.updateDynamicRules({
-        removeRuleIds: (await chrome.declarativeNetRequest.getDynamicRules()).map(rule => rule.id)
+        removeRuleIds: currentRules.map(rule => rule.id)
       });
+      await chrome.storage.sync.set({ ruleHits: {} });
       return;
     }
 
     // 获取当前的规则
     const currentRules = await chrome.declarativeNetRequest.getDynamicRules();
-    const currentRuleIds = currentRules.map(rule => rule.id);
-
+    
     // 创建新规则
     const newRules = filters
       .filter(filter => filter.enabled)
-      .map((filter, index) => convertFilterToRule(filter, index + 1));
+      .map((filter, index) => convertFilterToRule(filter, index));
+
+    console.log('New rules:', newRules); // 调试日志
 
     // 更新规则
     await chrome.declarativeNetRequest.updateDynamicRules({
-      removeRuleIds: currentRuleIds,
+      removeRuleIds: currentRules.map(rule => rule.id),
       addRules: newRules
     });
+
+    // 更新规则 ID 映射
+    const ruleIdMap = {};
+    newRules.forEach((rule, index) => {
+      ruleIdMap[index + 1] = rule.id;
+    });
+    await chrome.storage.sync.set({ ruleIdMap: ruleIdMap });
   } catch (error) {
     console.error('Error updating dynamic rules:', error);
+    // 打印更详细的错误信息
+    if (error.message) {
+      console.error('Error message:', error.message);
+    }
+    if (error.stack) {
+      console.error('Error stack:', error.stack);
+    }
   }
 }
 
@@ -84,36 +93,25 @@ chrome.storage.onChanged.addListener((changes, namespace) => {
 updateDynamicRules();
 
 // 监听重定向完成的事件
-chrome.declarativeNetRequest.onRuleMatchedDebug.addListener((info) => {
+chrome.declarativeNetRequest.onRuleMatchedDebug.addListener(async (info) => {
   const { request, rule } = info;
   
-  chrome.storage.sync.get(['filters'], (data) => {
-    const filters = data.filters || [];
-    const matchedFilter = filters[rule.id - 1];
+  try {
+    // 获取规则 ID 映射和当前计数
+    const data = await chrome.storage.sync.get(['ruleHits', 'ruleIdMap']);
+    const ruleHits = data.ruleHits || {};
+    const ruleIdMap = data.ruleIdMap || {};
     
-    if (matchedFilter) {
-      const log = {
-        timestamp: Date.now(),
-        ruleName: matchedFilter.name || `Rule ${rule.id}`,
-        url: request.url
-      };
-
-      // 保存日志
-      chrome.storage.local.get(['redirectLogs'], (data) => {
-        const logs = data.redirectLogs || [];
-        logs.unshift(log);
-        // 只保留最近 100 条记录
-        if (logs.length > 100) {
-          logs.length = 100;
-        }
-        chrome.storage.local.set({ redirectLogs: logs });
-      });
-
-      // 通知 popup 更新日志
-      chrome.runtime.sendMessage({
-        type: 'newRedirectLog',
-        log: log
-      });
+    // 找到原始的规则索引
+    const originalIndex = Object.entries(ruleIdMap)
+      .find(([index, id]) => id === rule.id)?.[0];
+    
+    if (originalIndex) {
+      ruleHits[originalIndex] = (ruleHits[originalIndex] || 0) + 1;
+      await chrome.storage.sync.set({ ruleHits: ruleHits });
+      console.log('Hit count saved for rule index:', originalIndex);
     }
-  });
+  } catch (error) {
+    console.error('Error updating hit count:', error);
+  }
 });

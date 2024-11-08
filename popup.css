@@ -59,8 +59,8 @@ h3 {
 
 .rule-content {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  align-items: center;
+  gap: 8px;
 }
 
 .url-line {
@@ -200,4 +200,51 @@ button:hover {
 
 ::-webkit-scrollbar-thumb:hover {
   background: #ccc;
-} 
+}
+
+.hit-count {
+  margin-left: 8px;
+  padding: 2px 6px;
+  background-color: #f0f0f0;
+  border-radius: 10px;
+  font-size: 12px;
+  color: #666;
+}
+
+.url-block {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.source-url, .target-url {
+  word-break: break-all;
+  font-family: monospace;
+  font-size: 12px;
+  padding: 2px 4px;
+  background: #f8f8f8;
+  border-radius: 2px;
+}
+
+.rule-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.arrow {
+  color: #2196F3;
+  font-weight: bold;
+  margin: 2px 0;
+}
+
+.hit-count {
+  min-width: 24px;
+  text-align: center;
+  padding: 2px 6px;
+  background-color: #f0f0f0;
+  border-radius: 10px;
+  font-size: 12px;
+  color: #666;
+}

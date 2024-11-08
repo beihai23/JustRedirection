@@ -1,101 +1,131 @@
 document.addEventListener('DOMContentLoaded', function() {
   const masterSwitch = document.getElementById('masterSwitch');
   const activeRulesList = document.getElementById('activeRules');
-  const redirectLogsList = document.getElementById('redirectLogs');
-  const clearLogsButton = document.getElementById('clearLogs');
   const openOptionsButton = document.getElementById('openOptions');
+  let refreshInterval;
 
-  // 加载主开关状态
-  chrome.storage.sync.get(['redirectEnabled'], function(data) {
-    masterSwitch.checked = data.redirectEnabled || false;
-  });
+  // 加载主开关状态和活跃规则
+  async function initialize() {
+    try {
+      // 加载主开关状态
+      const switchData = await chrome.storage.sync.get(['redirectEnabled']);
+      masterSwitch.checked = switchData.redirectEnabled || false;
 
-  // 加载活跃规则
-  loadActiveRules();
+      // 加载活跃规则
+      await loadActiveRules();
 
-  // 加载重定向日志
-  loadRedirectLogs();
+      // 设置定时刷新
+      startAutoRefresh();
+    } catch (error) {
+      console.error('Error initializing popup:', error);
+    }
+  }
+
+  // 开始自动刷新
+  function startAutoRefresh() {
+    // 清除可能存在的旧定时器
+    if (refreshInterval) {
+      clearInterval(refreshInterval);
+    }
+    // 每秒刷新一次规则列表
+    refreshInterval = setInterval(loadActiveRules, 1000);
+  }
+
+  // 停止自动刷新
+  function stopAutoRefresh() {
+    if (refreshInterval) {
+      clearInterval(refreshInterval);
+      refreshInterval = null;
+    }
+  }
+
+  // 当popup关闭时停止刷新
+  window.addEventListener('unload', stopAutoRefresh);
+
+  // 立即执行初始化
+  initialize();
 
   // 监听主开关变化
-  masterSwitch.addEventListener('change', function() {
+  masterSwitch.addEventListener('change', async function() {
     const enabled = masterSwitch.checked;
-    chrome.storage.sync.set({ redirectEnabled: enabled });
-    
-    // 通知background.js更新规则状态
-    chrome.runtime.sendMessage({
-      type: 'updateRedirectStatus',
-      enabled: enabled
-    });
-  });
-
-  // 清除日志
-  clearLogsButton.addEventListener('click', function() {
-    chrome.storage.local.set({ redirectLogs: [] }, function() {
-      redirectLogsList.innerHTML = '';
-    });
+    try {
+      await chrome.storage.sync.set({ redirectEnabled: enabled });
+      // 通知background.js更新规则状态
+      await chrome.runtime.sendMessage({
+        type: 'updateRedirectStatus',
+        enabled: enabled
+      });
+      // 重新加载规则列表
+      await loadActiveRules();
+    } catch (error) {
+      console.error('Error updating redirect status:', error);
+    }
   });
 
   // 打开选项页
   openOptionsButton.addEventListener('click', function() {
     chrome.runtime.openOptionsPage();
   });
+});
 
-  // 监听来自background的日志更新
-  chrome.runtime.onMessage.addListener(function(message) {
-    if (message.type === 'newRedirectLog') {
-      addLogToList(message.log);
+// 加载活跃规则
+async function loadActiveRules() {
+  try {
+    const data = await chrome.storage.sync.get(['filters', 'ruleHits']);
+    const filters = data.filters || [];
+    const ruleHits = data.ruleHits || {};
+    const activeRulesList = document.getElementById('activeRules');
+    
+    // 清空现有规则列表
+    activeRulesList.innerHTML = '';
+    
+    // 过滤出启用的规则并显示
+    const enabledFilters = filters.filter(filter => filter.enabled);
+    
+    if (enabledFilters.length === 0) {
+      const li = document.createElement('li');
+      li.className = 'rule-item';
+      li.textContent = 'no active rules';
+      activeRulesList.appendChild(li);
+      return;
     }
-  });
 
-  function loadActiveRules() {
-    chrome.storage.sync.get(['filters'], function(data) {
-      const filters = data.filters || [];
-      activeRulesList.innerHTML = '';
+    enabledFilters.forEach((filter, index) => {
+      const li = document.createElement('li');
+      li.className = 'rule-item';
       
-      filters.filter(filter => filter.enabled).forEach(filter => {
-        const li = document.createElement('li');
-        li.className = 'rule-item';
-        li.innerHTML = `
-          <div class="rule-content">
-            <span class="pattern">${filter.pattern}</span>
-            <span class="arrow">➔</span>
-            <span class="destination">${filter.destination}</span>
-          </div>
-        `;
-        activeRulesList.appendChild(li);
-      });
-
-      if (filters.filter(f => f.enabled).length === 0) {
-        const li = document.createElement('li');
-        li.className = 'rule-item';
-        li.textContent = 'no active rules';
-        activeRulesList.appendChild(li);
-      }
-    });
-  }
-
-  function loadRedirectLogs() {
-    chrome.storage.local.get(['redirectLogs'], function(data) {
-      const logs = data.redirectLogs || [];
-      redirectLogsList.innerHTML = '';
+      const ruleContent = document.createElement('div');
+      ruleContent.className = 'rule-content';
       
-      logs.slice(-50).forEach(addLogToList); // 只显示最近50条记录
+      const urlBlock = document.createElement('div');
+      urlBlock.className = 'url-block';
+      
+      const sourceUrl = document.createElement('div');
+      sourceUrl.className = 'source-url';
+      sourceUrl.textContent = filter.pattern;
+      
+      const arrow = document.createElement('div');
+      arrow.className = 'arrow';
+      arrow.textContent = '➔';
+      
+      const targetUrl = document.createElement('div');
+      targetUrl.className = 'target-url';
+      targetUrl.textContent = filter.destination;
+      
+      const hitCount = document.createElement('span');
+      hitCount.className = 'hit-count';
+      hitCount.textContent = ruleHits[index + 1] || 0;
+      
+      urlBlock.appendChild(sourceUrl);
+      urlBlock.appendChild(arrow);
+      urlBlock.appendChild(targetUrl);
+      ruleContent.appendChild(urlBlock);
+      ruleContent.appendChild(hitCount);
+      li.appendChild(ruleContent);
+      
+      activeRulesList.appendChild(li);
     });
+  } catch (error) {
+    console.error('Error loading active rules:', error);
   }
-
-  function addLogToList(log) {
-    const li = document.createElement('li');
-    li.className = 'log-item';
-    li.innerHTML = `
-      <span class="timestamp">${new Date(log.timestamp).toLocaleTimeString()}</span>
-      <span class="rule-name">${log.ruleName}</span>
-      <span class="url">${log.url}</span>
-    `;
-    redirectLogsList.insertBefore(li, redirectLogsList.firstChild);
-
-    // 保持列表不要太长
-    if (redirectLogsList.children.length > 50) {
-      redirectLogsList.lastChild.remove();
-    }
-  }
-}); 
+} 
