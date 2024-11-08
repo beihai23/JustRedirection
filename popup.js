@@ -2,7 +2,6 @@ document.addEventListener('DOMContentLoaded', function() {
   const masterSwitch = document.getElementById('masterSwitch');
   const activeRulesList = document.getElementById('activeRules');
   const openOptionsButton = document.getElementById('openOptions');
-  let refreshInterval;
 
   // 加载主开关状态和活跃规则
   async function initialize() {
@@ -12,35 +11,11 @@ document.addEventListener('DOMContentLoaded', function() {
       masterSwitch.checked = switchData.redirectEnabled || false;
 
       // 加载活跃规则
-      await loadActiveRules();
-
-      // 设置定时刷新
-      startAutoRefresh();
+      await loadActiveRules(activeRulesList);
     } catch (error) {
       console.error('Error initializing popup:', error);
     }
   }
-
-  // 开始自动刷新
-  function startAutoRefresh() {
-    // 清除可能存在的旧定时器
-    if (refreshInterval) {
-      clearInterval(refreshInterval);
-    }
-    // 每秒刷新一次规则列表
-    refreshInterval = setInterval(loadActiveRules, 1000);
-  }
-
-  // 停止自动刷新
-  function stopAutoRefresh() {
-    if (refreshInterval) {
-      clearInterval(refreshInterval);
-      refreshInterval = null;
-    }
-  }
-
-  // 当popup关闭时停止刷新
-  window.addEventListener('unload', stopAutoRefresh);
 
   // 立即执行初始化
   initialize();
@@ -56,7 +31,7 @@ document.addEventListener('DOMContentLoaded', function() {
         enabled: enabled
       });
       // 重新加载规则列表
-      await loadActiveRules();
+      await loadActiveRules(activeRulesList);
     } catch (error) {
       console.error('Error updating redirect status:', error);
     }
@@ -69,12 +44,10 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // 加载活跃规则
-async function loadActiveRules() {
+async function loadActiveRules(activeRulesList) {
   try {
-    const data = await chrome.storage.sync.get(['filters', 'ruleHits']);
+    const data = await chrome.storage.sync.get(['filters']);
     const filters = data.filters || [];
-    const ruleHits = data.ruleHits || {};
-    const activeRulesList = document.getElementById('activeRules');
     
     // 清空现有规则列表
     activeRulesList.innerHTML = '';
@@ -112,15 +85,10 @@ async function loadActiveRules() {
       targetUrl.className = 'target-url';
       targetUrl.textContent = filter.destination;
       
-      const hitCount = document.createElement('span');
-      hitCount.className = 'hit-count';
-      hitCount.textContent = ruleHits[index + 1] || 0;
-      
       urlBlock.appendChild(sourceUrl);
       urlBlock.appendChild(arrow);
       urlBlock.appendChild(targetUrl);
       ruleContent.appendChild(urlBlock);
-      ruleContent.appendChild(hitCount);
       li.appendChild(ruleContent);
       
       activeRulesList.appendChild(li);

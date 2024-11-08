@@ -202,15 +202,6 @@ button:hover {
   background: #ccc;
 }
 
-.hit-count {
-  margin-left: 8px;
-  padding: 2px 6px;
-  background-color: #f0f0f0;
-  border-radius: 10px;
-  font-size: 12px;
-  color: #666;
-}
-
 .url-block {
   flex: 1;
   display: flex;
@@ -237,14 +228,4 @@ button:hover {
   color: #2196F3;
   font-weight: bold;
   margin: 2px 0;
-}
-
-.hit-count {
-  min-width: 24px;
-  text-align: center;
-  padding: 2px 6px;
-  background-color: #f0f0f0;
-  border-radius: 10px;
-  font-size: 12px;
-  color: #666;
 }

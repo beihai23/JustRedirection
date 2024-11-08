@@ -171,6 +171,18 @@ chrome.declarativeNetRequest.onRuleMatchedDebug.addListener(async (info) => {
       ruleHits[originalIndex] = (ruleHits[originalIndex] || 0) + 1;
       await chrome.storage.sync.set({ ruleHits: ruleHits });
       console.log('Hit count saved for rule index:', originalIndex);
+
+      // 立即通知 popup 页面更新计数
+      try {
+        await chrome.runtime.sendMessage({
+          type: 'hitCountUpdated',
+          ruleIndex: originalIndex,
+          count: ruleHits[originalIndex]
+        });
+      } catch (error) {
+        // popup 可能未打开，忽略错误
+        console.log('Popup not available for hit count update');
+      }
     }
   } catch (error) {
     console.error('Error updating hit count:', error);
