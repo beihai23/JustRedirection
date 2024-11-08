@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Redirect Controller</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h2>Redirect Controller</h2>
+      <label class="switch">
+        <input type="checkbox" id="masterSwitch">
+        <span class="slider round"></span>
+      </label>
+    </div>
+
+    <div class="section">
+      <h3>Active Rules</h3>
+      <div class="rules-container">
+        <ul id="activeRules" class="rules-list">
+          <!-- Active rules will be dynamically added here -->
+        </ul>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>Redirect Logs</h3>
+      <div class="redirect-logs">
+        <ul id="redirectLogs" class="logs-list">
+          <!-- Redirect logs will be dynamically added here -->
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer">
+      <button id="clearLogs">Clear Logs</button>
+      <button id="openOptions">Settings</button>
+    </div>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>

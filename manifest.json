@@ -1,0 +1,21 @@
+{
+    "manifest_version": 3,
+    "name": "Request Redirector",
+    "version": "1.0",
+    "description": "Redirect requests based on filter rules",
+    "permissions": [
+      "storage",
+      "declarativeNetRequest",
+      "declarativeNetRequestFeedback"
+    ],
+    "host_permissions": [
+      "<all_urls>"
+    ],
+    "background": {
+      "service_worker": "background.js"
+    },
+    "action": {
+      "default_popup": "popup.html"
+    },
+    "options_page": "options.html"
+}

@@ -1,0 +1,203 @@
+body {
+  font-family: 'Comic Sans MS', cursive, sans-serif;
+  margin: 0;
+  padding: 10px;
+  width: 380px;
+  background: #f5f5f5;
+}
+
+.container {
+  background: white;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 2px dashed #ddd;
+}
+
+h2, h3 {
+  margin: 0;
+  color: #333;
+}
+
+h3 {
+  font-size: 16px;
+  margin-bottom: 10px;
+}
+
+.section {
+  margin-bottom: 15px;
+}
+
+.rules-list, .logs-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.rule-item, .log-item {
+  padding: 8px;
+  margin-bottom: 8px;
+  border: 2px solid #ddd;
+  border-radius: 4px;
+  font-size: 13px;
+  background: #fff;
+}
+
+.rule-item.disabled {
+  opacity: 0.5;
+}
+
+.rule-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.url-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 0;
+}
+
+.url-label {
+  min-width: 40px;
+  color: #666;
+  font-size: 12px;
+}
+
+.url-value {
+  flex: 1;
+  word-break: break-all;
+  font-family: monospace;
+  font-size: 12px;
+  color: #333;
+  background: #f8f8f8;
+  padding: 2px 4px;
+  border-radius: 2px;
+}
+
+.arrow {
+  color: #2196F3;
+  font-weight: bold;
+  align-self: center;
+  margin: 2px 0;
+}
+
+.log-item {
+  font-size: 12px;
+}
+
+.log-item .timestamp {
+  color: #666;
+  font-size: 10px;
+  margin-right: 8px;
+}
+
+.log-item .rule-name {
+  color: #2196F3;
+  margin-right: 8px;
+}
+
+/* Switch样式 */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 24px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: .4s;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: .4s;
+}
+
+.slider.round {
+  border-radius: 24px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
+}
+
+input:checked + .slider {
+  background-color: #2196F3;
+}
+
+input:checked + .slider:before {
+  transform: translateX(26px);
+}
+
+.footer {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 15px;
+  padding-top: 10px;
+  border-top: 2px dashed #ddd;
+}
+
+button {
+  padding: 6px 12px;
+  border: 2px solid #ddd;
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 14px;
+}
+
+button:hover {
+  background: #f5f5f5;
+}
+
+/* 自定义滚动条 */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #ddd;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #ccc;
+} 

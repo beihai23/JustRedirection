@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Redirect Rules Settings</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <div class="container">
+    <div class="header-section">
+      <h1>Redirect Rules Settings</h1>
+      
+      <form id="addRuleForm" class="add-rule-form">
+        <div class="form-group">
+          <input type="text" name="pattern" placeholder="Enter match pattern" required>
+          <span class="arrow">➔</span>
+          <input type="text" name="destination" placeholder="Enter redirect target" required>
+          <select name="matchType">
+            <option value="prefix">Prefix Match</option>
+            <option value="wildcard">Wildcard</option>
+            <option value="regex">Regular Expression</option>
+          </select>
+          <button type="submit">Add Rule</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="rules-section">
+      <h2>Existing Rules</h2>
+      <div class="rules-container">
+        <ul id="existingRules" class="rules-list">
+          <!-- Rules will be dynamically added here -->
+        </ul>
+      </div>
+    </div>
+  </div>
+  
+  <script src="lib/Sortable.min.js"></script>
+  <script src="options.js"></script>
+</body>
+</html>
