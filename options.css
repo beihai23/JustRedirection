@@ -239,3 +239,12 @@ button.primary {
   background-color: #E8F5E9;
   border-radius: 4px;
 }
+
+.priority-badge {
+  background: #2196F3;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 12px;
+  font-size: 12px;
+  margin-right: 8px;
+}

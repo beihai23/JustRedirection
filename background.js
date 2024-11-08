@@ -3,9 +3,20 @@ function convertFilterToRule(filter, index) {
   // 使用一个足够大的基数来确保 ID 唯一，同时保持为整数
   const uniqueId = (index + 1) * 100000 + Math.floor(Math.random() * 99999);
   
+  // 构造正则表达式
+  const regexFilter = "^" + escapeRegExp(filter.pattern) + "(.*)";
+  
+  // 打印规则的详细信息
+  console.log('Creating rule:', {
+    pattern: filter.pattern,
+    destination: filter.destination,
+    regexFilter: regexFilter,
+    priority: filter.priority || (index + 1)
+  });
+  
   return {
     id: uniqueId,
-    priority: 1,
+    priority: filter.priority || (index + 1),
     action: {
       type: "redirect",
       redirect: {
@@ -13,7 +24,7 @@ function convertFilterToRule(filter, index) {
       }
     },
     condition: {
-      regexFilter: "^" + escapeRegExp(filter.pattern) + "(.*)",
+      regexFilter: regexFilter,
       resourceTypes: ["xmlhttprequest", "main_frame", "sub_frame", "script", "stylesheet", "image"]
     }
   };
@@ -69,11 +80,8 @@ async function updateDynamicRules() {
     const enabled = data.redirectEnabled || false;
     const filters = data.filters || [];
     
-    // 更新图标状态
     await updateExtensionIcon(enabled);
-    console.log('Icon updated:', enabled ? 'enabled' : 'disabled'); // 添加调试日志
     
-    // 如果总开关关闭，清除所有规则和命中计数
     if (!enabled) {
       const currentRules = await chrome.declarativeNetRequest.getDynamicRules();
       await chrome.declarativeNetRequest.updateDynamicRules({
@@ -83,21 +91,26 @@ async function updateDynamicRules() {
       return;
     }
 
-    // 获取当前的规则
     const currentRules = await chrome.declarativeNetRequest.getDynamicRules();
     
-    // 创建新规则
+    // 打印所有启用的过滤器
+    console.log('Enabled filters:', filters.filter(filter => filter.enabled));
+    
     const newRules = filters
       .filter(filter => filter.enabled)
       .map((filter, index) => convertFilterToRule(filter, index));
 
-    console.log('New rules:', newRules); // 调试日志
+    console.log('Generated rules:', newRules);
 
     // 更新规则
     await chrome.declarativeNetRequest.updateDynamicRules({
       removeRuleIds: currentRules.map(rule => rule.id),
       addRules: newRules
     });
+
+    // 验证规则是否成功添加
+    const updatedRules = await chrome.declarativeNetRequest.getDynamicRules();
+    console.log('Registered rules:', updatedRules);
 
     // 更新规则 ID 映射
     const ruleIdMap = {};
@@ -107,7 +120,6 @@ async function updateDynamicRules() {
     await chrome.storage.sync.set({ ruleIdMap: ruleIdMap });
   } catch (error) {
     console.error('Error updating dynamic rules:', error);
-    // 打印更详细的错误信息
     if (error.message) {
       console.error('Error message:', error.message);
     }
@@ -152,39 +164,3 @@ chrome.storage.onChanged.addListener((changes, namespace) => {
 
 // 初始化时更新规则
 updateDynamicRules();
-
-// 监听重定向完成的事件
-chrome.declarativeNetRequest.onRuleMatchedDebug.addListener(async (info) => {
-  const { request, rule } = info;
-  
-  try {
-    // 获取规则 ID 映射和当前计数
-    const data = await chrome.storage.sync.get(['ruleHits', 'ruleIdMap']);
-    const ruleHits = data.ruleHits || {};
-    const ruleIdMap = data.ruleIdMap || {};
-    
-    // 找到原始的规则索引
-    const originalIndex = Object.entries(ruleIdMap)
-      .find(([index, id]) => id === rule.id)?.[0];
-    
-    if (originalIndex) {
-      ruleHits[originalIndex] = (ruleHits[originalIndex] || 0) + 1;
-      await chrome.storage.sync.set({ ruleHits: ruleHits });
-      console.log('Hit count saved for rule index:', originalIndex);
-
-      // 立即通知 popup 页面更新计数
-      try {
-        await chrome.runtime.sendMessage({
-          type: 'hitCountUpdated',
-          ruleIndex: originalIndex,
-          count: ruleHits[originalIndex]
-        });
-      } catch (error) {
-        // popup 可能未打开，忽略错误
-        console.log('Popup not available for hit count update');
-      }
-    }
-  } catch (error) {
-    console.error('Error updating hit count:', error);
-  }
-});

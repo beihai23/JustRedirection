@@ -7,12 +7,20 @@
 </head>
 <body>
   <div class="container">
+    <div class="top-bar">
+      <div class="left-section">
+        <div class="settings-icon" title="Settings">⚙️</div>
+      </div>
+      <div class="right-section">
+        <label class="switch">
+          <input type="checkbox" id="masterSwitch">
+          <span class="slider round"></span>
+        </label>
+      </div>
+    </div>
+
     <div class="header">
       <h2>Redirect Controller</h2>
-      <label class="switch">
-        <input type="checkbox" id="masterSwitch">
-        <span class="slider round"></span>
-      </label>
     </div>
 
     <div class="section">
@@ -22,10 +30,6 @@
           <!-- Active rules will be dynamically added here -->
         </ul>
       </div>
-    </div>
-
-    <div class="footer">
-      <button id="openOptions">Settings</button>
     </div>
   </div>
   <script src="popup.js"></script>

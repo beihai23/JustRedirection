@@ -48,11 +48,6 @@ function addRuleToUI(filter) {
             <input type="text" class="url-box source" value="${filter.pattern}" disabled>
             <span class="arrow">➔</span>
             <input type="text" class="url-box destination" value="${filter.destination}" disabled>
-            <select class="match-type" disabled>
-                <option value="prefix" ${filter.type === 'prefix' ? 'selected' : ''}>Prefix Match</option>
-                <option value="wildcard" ${filter.type === 'wildcard' ? 'selected' : ''}>Wildcard</option>
-                <option value="regex" ${filter.type === 'regex' ? 'selected' : ''}>Regular Expression</option>
-            </select>
             <div class="rule-controls">
                 <label class="switch">
                     <input type="checkbox" class="rule-toggle" ${filter.enabled ? 'checked' : ''}>
@@ -73,7 +68,6 @@ function attachRuleEventListeners(ruleElement, filter) {
     const toggle = ruleElement.querySelector('.rule-toggle');
     const deleteBtn = ruleElement.querySelector('.delete-btn');
     const editBtn = ruleElement.querySelector('.edit-btn');
-    const matchTypeSelect = ruleElement.querySelector('.match-type');
     const sourceInput = ruleElement.querySelector('.source');
     const destinationInput = ruleElement.querySelector('.destination');
     
@@ -90,28 +84,20 @@ function attachRuleEventListeners(ruleElement, filter) {
     editBtn.addEventListener('click', () => {
         const isEditing = editBtn.textContent === '✓';
         if (isEditing) {
-            filter.pattern = sourceInput.value;
-            filter.destination = destinationInput.value;
-            filter.type = matchTypeSelect.value;
+            filter.pattern = sourceInput.value.trim();
+            filter.destination = destinationInput.value.trim();
+            sourceInput.value = filter.pattern;
+            destinationInput.value = filter.destination;
             sourceInput.disabled = true;
             destinationInput.disabled = true;
-            matchTypeSelect.disabled = true;
             editBtn.textContent = '✎';
             editBtn.title = 'Edit Rule';
             updateFiltersInStorage();
         } else {
             sourceInput.disabled = false;
             destinationInput.disabled = false;
-            matchTypeSelect.disabled = false;
             editBtn.textContent = '✓';
             editBtn.title = 'Save Rule';
-        }
-    });
-    
-    matchTypeSelect.addEventListener('change', () => {
-        if (!matchTypeSelect.disabled) {
-            filter.type = matchTypeSelect.value;
-            updateFiltersInStorage();
         }
     });
 }
@@ -140,15 +126,24 @@ function showDeleteConfirmation(ruleElement, filter) {
 function updateFiltersInStorage() {
     const filters = Array.from(rulesContainer.children).map((li, index) => ({
         id: li.dataset.id,
-        pattern: li.querySelector('.source').value,
-        destination: li.querySelector('.destination').value,
-        type: li.querySelector('.match-type').value,
+        pattern: li.querySelector('.source').value.trim(),
+        destination: li.querySelector('.destination').value.trim(),
+        type: 'prefix',
         enabled: li.querySelector('.rule-toggle').checked,
-        order: index
+        order: index,
+        priority: index + 1
     }));
     
     console.log('Updating filters in storage:', filters);
-    chrome.storage.sync.set({ filters: filters });
+    
+    chrome.storage.sync.set({ filters: filters }, function() {
+        if (chrome.runtime.lastError) {
+            console.error('Error saving filters:', chrome.runtime.lastError);
+            return;
+        }
+        
+        chrome.runtime.sendMessage({ type: 'updateRedirectStatus' });
+    });
 }
 
 function getNextOrder() {
@@ -167,11 +162,12 @@ function handleAddRule(e) {
     const formData = new FormData(e.target);
     const newFilter = {
         id: Date.now().toString(),
-        pattern: formData.get('pattern'),
-        destination: formData.get('destination'),
-        type: formData.get('matchType'),
+        pattern: formData.get('pattern').trim(),
+        destination: formData.get('destination').trim(),
+        type: 'prefix',
         enabled: true,
-        order: getNextOrder()
+        order: getNextOrder(),
+        priority: getNextOrder() + 1
     };
     
     console.log('New filter created:', newFilter);
@@ -196,6 +192,8 @@ function handleAddRule(e) {
             loadConfiguration();
             
             showSuccessMessage();
+            
+            chrome.runtime.sendMessage({ type: 'updateRedirectStatus' });
         });
     });
 }
