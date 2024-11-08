@@ -24,12 +24,54 @@ function escapeRegExp(string) {
   return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+// 更新插件图标
+async function updateExtensionIcon(enabled) {
+  console.log('Updating icon to:', enabled ? 'enabled' : 'disabled');
+  try {
+    // 使用完整的图标集合
+    await chrome.action.setIcon({
+      path: enabled ? {
+        "16": "images/icon16.png",
+        "48": "images/icon48.png",
+        "128": "images/icon128.png"
+      } : {
+        "16": "images/icon16off.png",
+        "48": "images/icon48.png",
+        "128": "images/icon128.png"
+      }
+    });
+    
+    // 更新图标的标题
+    await chrome.action.setTitle({
+      title: enabled ? "Redirect Enabled" : "Redirect Disabled"
+    });
+    
+    // 更新图标的徽章
+    await chrome.action.setBadgeText({
+      text: enabled ? "ON" : "OFF"
+    });
+    
+    // 设置徽章的背景色
+    await chrome.action.setBadgeBackgroundColor({
+      color: enabled ? "#4CAF50" : "#999999"
+    });
+    
+    console.log('Icon update completed');
+  } catch (error) {
+    console.error('Error updating extension icon:', error);
+  }
+}
+
 // 更新动态规则
 async function updateDynamicRules() {
   try {
     const data = await chrome.storage.sync.get(['redirectEnabled', 'filters']);
     const enabled = data.redirectEnabled || false;
     const filters = data.filters || [];
+    
+    // 更新图标状态
+    await updateExtensionIcon(enabled);
+    console.log('Icon updated:', enabled ? 'enabled' : 'disabled'); // 添加调试日志
     
     // 如果总开关关闭，清除所有规则和命中计数
     if (!enabled) {
@@ -75,6 +117,24 @@ async function updateDynamicRules() {
   }
 }
 
+// 确保在插件启动时更新图标
+chrome.runtime.onStartup.addListener(async () => {
+  console.log('Browser started'); // 调试日志
+  const data = await chrome.storage.sync.get(['redirectEnabled']);
+  const enabled = data.redirectEnabled || false;
+  console.log('Initial redirect status:', enabled); // 调试日志
+  await updateExtensionIcon(enabled);
+});
+
+// 在插件安装或更新时更新图标
+chrome.runtime.onInstalled.addListener(async () => {
+  console.log('Extension installed/updated'); // 调试日志
+  const data = await chrome.storage.sync.get(['redirectEnabled']);
+  const enabled = data.redirectEnabled || false;
+  console.log('Initial redirect status:', enabled); // 调试日志
+  await updateExtensionIcon(enabled);
+});
+
 // 监听来自 popup 的消息
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'updateRedirectStatus') {
@@ -82,10 +142,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 });
 
-// 监听存储变化
+// 监听存储变化，专门处理开关状态的变化
 chrome.storage.onChanged.addListener((changes, namespace) => {
-  if (namespace === 'sync' && (changes.filters || changes.redirectEnabled)) {
-    updateDynamicRules();
+  if (namespace === 'sync' && changes.redirectEnabled) {
+    console.log('Redirect status changed:', changes.redirectEnabled.newValue); // 调试日志
+    updateExtensionIcon(changes.redirectEnabled.newValue);
   }
 });
 
