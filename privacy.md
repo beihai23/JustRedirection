@@ -1,6 +1,6 @@
-# Privacy Policy for [Your Extension Name]
+# Privacy Policy for [Request Redirector]
 
-Last updated: [Date]
+Last updated: [2024-11-09]
 
 ## Information Collection and Use
 This extension does not collect or store any personal information. The only data processed are:
