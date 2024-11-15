@@ -4,32 +4,60 @@
   <meta charset="UTF-8">
   <title>Redirect Rules Settings</title>
   <link rel="stylesheet" href="options.css">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap" rel="stylesheet">
 </head>
 <body>
   <div class="container">
-    <div class="header-section">
-      <h1>Redirect Rules Settings</h1>
-      
-      <form id="addRuleForm" class="add-rule-form">
-        <div class="form-group">
-          <input type="text" name="pattern" placeholder="Enter match pattern" required>
-          <span class="arrow">➔</span>
-          <input type="text" name="destination" placeholder="Enter redirect target" required>
-          <button type="submit">Add Rule</button>
-        </div>
-      </form>
+    <h1>Redirect Rules Settings</h1>
+    
+    <form id="addRuleForm" class="add-rule-form">
+      <div class="input-group">
+        <input type="text" id="matchPattern" name="pattern" placeholder="Enter match pattern">
+      </div>
+      <div class="arrow-icon"></div>
+      <div class="input-group">
+        <input type="text" id="redirectTarget" name="destination" placeholder="Enter redirect target">
+      </div>
+      <button type="submit" class="add-rule-btn">Add Rule</button>
+    </form>
+
+    <h3>Existing Rules</h3>
+    <div id="existingRules" class="rules-list">
+      <!-- Rules will be dynamically added here -->
+    </div>
+    <div class="no-rules" id="noRulesMessage">
+      No rules yet
     </div>
 
-    <div class="rules-section">
-      <h2>Existing Rules</h2>
-      <div class="rules-container">
-        <ul id="existingRules" class="rules-list">
-          <!-- Rules will be dynamically added here -->
-        </ul>
+    <!-- 移到body底部的模板 -->
+    <template id="ruleTemplate">
+      <div class="rule-item">
+        <div class="rule-main">
+          <div class="url-group">
+            <input type="text" class="url-input source" disabled>
+            <div class="arrow-icon"></div>
+            <input type="text" class="url-input target" disabled>
+          </div>
+          <div class="rule-controls">
+            <label class="switch">
+              <input type="checkbox" class="rule-toggle" checked>
+              <span class="slider round"></span>
+            </label>
+            <button class="control-btn edit-btn" title="Edit">✎</button>
+            <button class="control-btn delete-btn" title="Delete">🗑️</button>
+          </div>
+        </div>
+        <div class="confirmation-bubble" style="display: none;">
+          <p>Are you sure you want to delete this rule?</p>
+          <div class="btn-group">
+            <button class="confirm-yes">Yes</button>
+            <button class="confirm-no">No</button>
+          </div>
+        </div>
       </div>
-    </div>
+    </template>
   </div>
-  
+
   <script src="lib/Sortable.min.js"></script>
   <script src="options.js"></script>
 </body>

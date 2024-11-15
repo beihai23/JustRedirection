@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>Redirect Controller</title>
   <link rel="stylesheet" href="popup.css">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap" rel="stylesheet">
 </head>
 <body>
   <div class="container">
@@ -26,9 +27,19 @@
     <div class="section">
       <h3>Active Rules</h3>
       <div class="rules-container">
-        <ul id="activeRules" class="rules-list">
-          <!-- Active rules will be dynamically added here -->
-        </ul>
+        <div id="activeRules" class="rules-list">
+          <!-- Rules will be dynamically added here -->
+          <template id="ruleTemplate">
+            <div class="rule-item">
+              <div class="source-url"></div>
+              <div class="redirect-arrow">➜</div>
+              <div class="target-url"></div>
+            </div>
+          </template>
+        </div>
+        <div class="no-rules" id="noRulesMessage" style="display: none;">
+          No active rules
+        </div>
       </div>
     </div>
   </div>
